@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>DCC104 - Exemplo 02</title>
+    <script src="ImageLoader.js" charset="utf-8"></script>
+    <script src="AudioLoader.js" charset="utf-8"></script>
+    <script src="Sprite.js" charset="utf-8"></script>
+    <script src="Level.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <h1>DCC104 - Exemplo 02</h1>
+    <canvas></canvas>
+    <script>
+      var eCanvas = document.getElementsByTagName("canvas")[0];
+      eCanvas.width = 600;
+      eCanvas.height = 380;
+      var ctx = eCanvas.getContext("2d");
+
+      var il = new ImageLoader();
+      il.load("pc", "images/player_ship.png");
+      il.load("enemy", "images/enemy_1.png");
+      il.load("shot", "images/shot.png");
+
+      var al = new AudioLoader();
+      al.load("shot", "audios/Missle_Launch-Kibblesbob-2118796725.mp3");
+      al.load("boom", "audios/Grenade-SoundBible.com-1777900486.mp3");
+
+
+      var fps = 120;
+      var atual = new Date();
+      var anterior = new Date();
+      var dt = 1/fps;
+      var running = true;
+	  
+      //Propriedades do player
+      var player = new Sprite();
+      player.x = 140;
+      player.y = 80;
+      player.angle = -90;
+      player.width = 15;
+      player.height = 15;
+      player.color = "red";
+      player.g = 500;
+
+
+      var fuel = 100;
+      var acelerandoX = false;
+      var level = new Level();
+      level.imageLib = il;
+      level.init();
+
+      desenha();
+
+	    function reseta() {
+        level.score = 0;
+        level.dificulty = 0;
+	    }
+
+
+      function desenha(){
+        
+        if(running) {
+            requestAnimationFrame(desenha);
+            atual = new Date();
+            dt = (atual - anterior)/1000;
+		
+            ctx.clearRect(0,0,eCanvas.width, eCanvas.height);
+            ctx.fillStyle = "black";
+            ctx.fillRect(0,0,eCanvas.width, eCanvas.height);
+            ctx.strokeRect(0,0,eCanvas.width, eCanvas.height);
+
+            player.mover(dt);
+            level.mover(dt);
+
+            level.colidiuCom(player,
+             function(inimigo, alvo){
+               console.log((player.x + player.width) + " \< " + inimigo.x);
+               running = false;
+               //fazer alvo colidiu com player
+          }
+        );
+
+            for(var i = 0; i < level.sprites.length; i += 2) {
+                if(level.sprites[i].x + level.sprites[i].width < player.x){
+                  if(level.tresspass[Math.floor(i / 2)] == 0) {
+                    level.score = level.score + 1;
+                    level.tresspass[Math.floor(i / 2)] = 1;
+                    level.sprites[i].color = "darkgreen";
+                    level.sprites[i+1].color = level.sprites[i].color;
+                  }
+                }
+                if(level.sprites[i].x + level.sprites[i].width < -10) {
+                  level.sprites[i].x = 1190;
+                  level.sprites[i].y = ((Math.random() * (300 - level.espaco) + level.espaco));
+                  level.sprites[i+1].x = level.sprites[i].x;
+                  level.sprites[i+1].y = level.sprites[i].y - level.sprites[i].height - level.espaco;
+                  level.tresspass[i/2] = 0;
+                  level.sprites[i].color = "blue";
+                  level.sprites[i+1].color = level.sprites[i].color;
+                }
+            }
+
+            if(player.y > 390) {
+              running = false;
+            }
+		
+            level.desenhar(ctx);
+            player.desenhar(ctx);
+            ctx.fillStyle = "white";
+            ctx.fillText("FPS: "+Math.floor(1/dt), 6, 10);
+		
+            ctx.fillStyle = "white";
+            ctx.fillText("Points: "+level.score, 6, 26);
+            //level.colidiuComTiros(al,"boom")
+            anterior = atual;
+        }
+        else {
+            ctx.fillStyle = "white";
+            ctx.fillText("You Lose! Points: "+level.score, 200, 200);
+        }
+      }
+
+      addEventListener("keydown", function(e){
+        switch (e.keyCode) {
+          case 32:
+            player.vy = -200;
+            break;
+
+          case 37:
+            player.vx = -100;
+            break;
+          case 38:
+            player.am = 50;
+            break;
+          case 39:
+            player.vx = +100;
+            break;
+          default:
+
+        }
+      });
+
+      addEventListener("keyup", function(e){
+        switch (e.keyCode) {
+          case 37:
+            player.vx = 0;
+            break;
+          case 38:
+            player.am = 0;
+            break;
+          case 39:
+            player.vx = 0;
+            break;
+          default:
+
+        }
+      });
+
+    </script>
+  </body>
+
+
+
+
+</html>
